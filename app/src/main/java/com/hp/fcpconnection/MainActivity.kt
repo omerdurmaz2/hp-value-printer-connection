@@ -14,7 +14,6 @@ import jpos.POSPrinterConst
 import android.graphics.BitmapFactory
 
 import android.graphics.Bitmap
-import android.util.Printer
 import jpos.POSPrinterConst.PTR_BMT_BMP
 
 
@@ -69,7 +68,8 @@ class MainActivity : AppCompatActivity(), IJPOSInitCompleteCallBack {
             Log.e(
                 "sss",
                 "###errorListener: $it"
-            )        }
+            )
+        }
     }
 
     override fun onComplete() {
@@ -87,29 +87,26 @@ class MainActivity : AppCompatActivity(), IJPOSInitCompleteCallBack {
             printer.powerNotify = JposConst.JPOS_PN_ENABLED
             printer.deviceEnabled = true
 
-
-            printLogo(true)
-            printer.queueTextAlign(1)
-            printer.queueText("DENKER ELEKTRONİK TİC. LTD. ŞTİ.\n")
-            printer.queueText("DENKER TEST MAĞAZASI\n")
-            printer.queueText("KADIKÖY / İSTANBUL\n")
-            printer.queueText("www.denker.com.tr\n")
-            printer.queueText("TANITIM AMAÇLIDIR. MALİ DEĞERİ YOKTUR.\n")
-            printer.queueFeedLine(1)
-            printer.queueTextStyle(0,1,1,0)
-            printer.queueText(LARGE_ON+"BİLGİ FİŞİ" +LARGE_OFF)
-            printer.queueFeedLine(1)
-            printer.queueTextAlign(0)
-            printer.queueText("deneme")
-            printer.queueTextAlign(2)
-            printer.queueText("deneme")
-
-            printer.queueFeedLine(2)
-
-
-            printer.printQueuedDataNormal(
-                POSPrinterConst.PTR_S_RECEIPT
-            )
+            printTopLogo()
+            printAddress()
+            printTitle("BİLGİ FİŞİ", true)
+            printSubTitle("TÜR: e-ARŞİV FATURA", true)
+            printDateShopNumber("22.06.1998", 245)
+            printTimeFiscalId("15:54", 99)
+            printReceiptNoZNo(456, 99)
+            printLine()
+            printSubTitle("E-Arşif Gönderim Bilgileri", true)
+            printTitleValue("EPosta","")
+            printTitleValue("Ünvan","Nihai Tüketici")
+            printTitleValue("V.D","")
+            printTitleValue("V.K.N","11111111111")
+            printTitleValue("Telefon","")
+            printTitleValue("Adres","")
+            printTitleValue("Belge No","0123456789")
+            printTitleValue("ETTN","0123456789")
+            printLine()
+            printBottomLogo()
+            skipLine(2)
 
             printer.cutPaper(100)
             printer.deviceEnabled = false
@@ -124,6 +121,41 @@ class MainActivity : AppCompatActivity(), IJPOSInitCompleteCallBack {
         }
     }
 
+    private fun printDateShopNumber(date: String, shopNo: Int) {
+        printer.printNormal(
+            POSPrinterConst.PTR_S_RECEIPT,
+            "\u001b\u0061\u0030Tarih \t:$date  \u001b\u0061\u0032 Mağaza No \t:$shopNo"
+        )
+    }
+
+    private fun printLine() {
+        printer.printNormal(
+            POSPrinterConst.PTR_S_RECEIPT,
+            "------------------------------------------"
+        )
+    }
+
+    private fun printTitleValue(title: String, value: String) {
+        printer.printNormal(
+            POSPrinterConst.PTR_S_RECEIPT,
+            "$title\t : $value"
+        )
+    }
+
+    private fun printTimeFiscalId(time: String, fiscalId: Int) {
+        printer.printNormal(
+            POSPrinterConst.PTR_S_RECEIPT,
+            "Saat\t: $time\t\tKasa No\t\t:$fiscalId"
+        )
+    }
+
+    private fun printReceiptNoZNo(rNo: Int, zNo: Int) {
+        printer.printNormal(
+            POSPrinterConst.PTR_S_RECEIPT,
+            "Belge No: $rNo\t\tZ No\t\t:$zNo"
+        )
+    }
+
     private fun skipLine(lCount: Int) {
         var text = ""
         if (lCount > 0) {
@@ -135,35 +167,47 @@ class MainActivity : AppCompatActivity(), IJPOSInitCompleteCallBack {
     }
 
 
-    private fun printLogo(isHeader: Boolean) {
+    private fun printTopLogo() {
         val alignment = POSPrinterConst.PTR_BM_CENTER
         val logo =
-            if (isHeader) bitmapToByteArray(imageToBitmap(R.drawable.denker_logo_receipt_header))
-            else bitmapToByteArray(imageToBitmap(R.drawable.denker_logo_receipt_footer))
+            bitmapToByteArray(imageToBitmap(R.drawable.denker_logo_receipt_header))
         printer.printMemoryBitmap(
             POSPrinterConst.PTR_S_RECEIPT,
             logo,
             PTR_BMT_BMP,
-            if (isHeader) 500 else 250,
+            500,
+            alignment
+        )
+    }
+
+    private fun printBottomLogo() {
+        val alignment = POSPrinterConst.PTR_BM_CENTER
+        val logo =
+            bitmapToByteArray(imageToBitmap(R.drawable.denker_logo_receipt_footer))
+        printer.printMemoryBitmap(
+            POSPrinterConst.PTR_S_RECEIPT,
+            logo,
+            PTR_BMT_BMP,
+            250,
             alignment
         )
     }
 
     class PrinterText(private var text: String) {
         private val escape = "\u001b"
-        private val turkish = "\u001b\u0074\u0069"
+        private val turkish = "\u001bti"
         private val boldOn = "\u001b\u0045\u0001"
         private val boldOff = "\u001b\u0045\u0000"
         private val underlineOn = "\u001b\u002d\u0031"
         private val underlineOff = "\u001b\u002d\u0030"
         private val right = "\u001b\u0061\u0032"
-        private val center = "\u001b\u0061\u0031"
+        private val center = "\u001ba1"
         private val left = "\u001b\u0061\u0030"
-        private val largeOn = "\u001b\u0021\u0000"
-        private val largeOff = "\u001b\u0021\u0020"
-        private val mediumOn = "\u001b\u0021\u0010"
-        private val mediumOff = "\u001b\u0021\u0020"
-        private val compressOn = "\u001b\u0021\u0001"
+        private val largeOn = "\u001b!\u0010"
+        private val largeOff = "\u001b!0"
+        private val mediumOn = "\u001b!\u0010"
+        private val mediumOff = "\u001b!\u0020"
+        private val compressOn = "\u001b!\u0001"
         private val nextLine = "\u000A"
 
         private var isCenter = false
