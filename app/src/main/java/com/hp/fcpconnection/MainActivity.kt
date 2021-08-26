@@ -87,23 +87,27 @@ class MainActivity : AppCompatActivity(), IJPOSInitCompleteCallBack {
             printer.powerNotify = JposConst.JPOS_PN_ENABLED
             printer.deviceEnabled = true
 
+
             printTopLogo()
             printAddress()
             printTitle("BİLGİ FİŞİ", true)
             printSubTitle("TÜR: e-ARŞİV FATURA", true)
-            printDateShopNumber("22.06.1998", 245)
+            skipLine(1)
+            printTitleValue("Tarih", "22.06.1998","Mağaza No","120")
+            skipLine(1)
             printTimeFiscalId("15:54", 99)
             printReceiptNoZNo(456, 99)
             printLine()
-            printSubTitle("E-Arşif Gönderim Bilgileri", true)
-            printTitleValue("EPosta","")
-            printTitleValue("Ünvan","Nihai Tüketici")
-            printTitleValue("V.D","")
-            printTitleValue("V.K.N","11111111111")
-            printTitleValue("Telefon","")
-            printTitleValue("Adres","")
-            printTitleValue("Belge No","0123456789")
-            printTitleValue("ETTN","0123456789")
+            printSubTitle("E-Arşiv Gönderim Bilgileri", true)
+            printLine()
+            printTitleValue("EPosta", "",)
+            printTitleValue("Ünvan", "Nihai Tüketici",)
+            printTitleValue("V.D", "",)
+            printTitleValue("V.K.N", "11111111111",)
+            printTitleValue("Telefon", "",)
+            printTitleValue("Adres", "",)
+            printTitleValue("Belge No", "0123456789",)
+            printTitleValue("ETTN", "0123456789",)
             printLine()
             printBottomLogo()
             skipLine(2)
@@ -135,10 +139,18 @@ class MainActivity : AppCompatActivity(), IJPOSInitCompleteCallBack {
         )
     }
 
-    private fun printTitleValue(title: String, value: String) {
+    private fun printTitleValue(title: String?=null, value: String?=null, rTitle:String?=null,rValue:String?=null) {
+
+        if (title!=null) {
+
+        }
+        else if(rTitle!=null){
+
+        }
+
         printer.printNormal(
             POSPrinterConst.PTR_S_RECEIPT,
-            "$title\t : $value"
+            ""
         )
     }
 
@@ -195,19 +207,20 @@ class MainActivity : AppCompatActivity(), IJPOSInitCompleteCallBack {
 
     class PrinterText(private var text: String) {
         private val escape = "\u001b"
-        private val turkish = "\u001bti"
-        private val boldOn = "\u001b\u0045\u0001"
-        private val boldOff = "\u001b\u0045\u0000"
+        private val turkish = "\u001btH"
+        private val boldOn = "\u001b\u0021\u0008"
+        private val boldOff = "\u001b\u0021\u0000"
         private val underlineOn = "\u001b\u002d\u0031"
         private val underlineOff = "\u001b\u002d\u0030"
         private val right = "\u001b\u0061\u0032"
         private val center = "\u001ba1"
         private val left = "\u001b\u0061\u0030"
-        private val largeOn = "\u001b!\u0010"
+        private val largeOn = "\u001b!\u0030"
         private val largeOff = "\u001b!0"
         private val mediumOn = "\u001b!\u0010"
-        private val mediumOff = "\u001b!\u0020"
+        private val mediumOff = "\u001b!\u0000"
         private val compressOn = "\u001b!\u0001"
+        private val compressOff = "\u001b!\u0000"
         private val nextLine = "\u000A"
 
         private var isCenter = false
@@ -293,10 +306,10 @@ class MainActivity : AppCompatActivity(), IJPOSInitCompleteCallBack {
                     text = underlineOn + text + underlineOff
                 }
                 isCompress -> {
-                    text = compressOn + text
+                    text = compressOn + text + compressOff
                 }
             }
-            return turkish + text
+            return text.convertLettersToEnglish()
         }
     }
 
@@ -316,7 +329,7 @@ class MainActivity : AppCompatActivity(), IJPOSInitCompleteCallBack {
 
     private fun printSubTitle(title: String, bold: Boolean) {
         val p = PrinterText(title).center().subTitle()
-        if (bold) p.bold()
+        if (bold) p.bold().compress()
         printer.printNormal(POSPrinterConst.PTR_S_RECEIPT, p.write())
     }
 
