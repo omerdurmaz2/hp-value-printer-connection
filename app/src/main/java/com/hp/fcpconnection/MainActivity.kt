@@ -14,6 +14,7 @@ import jpos.POSPrinterConst
 import android.graphics.BitmapFactory
 
 import android.graphics.Bitmap
+import android.util.Printer
 import jpos.POSPrinterConst.PTR_BMT_BMP
 
 
@@ -36,6 +37,7 @@ class MainActivity : AppCompatActivity(), IJPOSInitCompleteCallBack {
     private val compressOn = "\u001b\u0021\u0001"
     private val emphasizedOn = "\u001b\u0045\u0001"
     private val emphasizedOff = "\u001b\u0045\u0000"
+    private val maxLength = 42
 
     private lateinit var binding: ActivityMainBinding
     private val printer = POSPrinter()
@@ -88,29 +90,89 @@ class MainActivity : AppCompatActivity(), IJPOSInitCompleteCallBack {
             printer.deviceEnabled = true
 
 
+            skipLine(2)
+
             printTopLogo()
             printAddress()
+            skipLine(1)
             printTitle("BİLGİ FİŞİ", true)
-            printSubTitle("TÜR: e-ARŞİV FATURA", true)
-            skipLine(1)
-            printTitleValue("Tarih", "22.06.1998","Mağaza No","120")
-            skipLine(1)
-            printTimeFiscalId("15:54", 99)
-            printReceiptNoZNo(456, 99)
-            printLine()
-            printSubTitle("E-Arşiv Gönderim Bilgileri", true)
-            printLine()
-            printTitleValue("EPosta", "",)
-            printTitleValue("Ünvan", "Nihai Tüketici",)
-            printTitleValue("V.D", "",)
-            printTitleValue("V.K.N", "11111111111",)
-            printTitleValue("Telefon", "",)
-            printTitleValue("Adres", "",)
-            printTitleValue("Belge No", "0123456789",)
-            printTitleValue("ETTN", "0123456789",)
-            printLine()
-            printBottomLogo()
             skipLine(2)
+            printSubTitle("TÜR: e-ARŞİV FATURA", true)
+            skipLine(2)
+            alignLeft()
+            printer.printNormal(
+                POSPrinterConst.PTR_S_RECEIPT,
+                TitleValueQueue().add("Tarih", "22.06.1998", "Magaza No", "120")
+                    .add("Saat", "09:53", "Kasa No", "1")
+                    .add("Belge No", "4", "Z No", "26")
+                    .create()
+            )
+            printLine()
+            alignCenter()
+            printSubTitle("E-Arşiv Gönderim Bilgileri", true)
+            skipLine(1)
+            alignLeft()
+            printer.printNormal(
+                POSPrinterConst.PTR_S_RECEIPT,
+                TitleValueQueue()
+                    .add("EPosta", "")
+                    .add("Ünvan", "Nihai Tüketici")
+                    .add("V.D", "")
+                    .add("V.K.N", "11111111111")
+                    .add("Telefon", "")
+                    .add("Adres", "")
+                    .add("Belge No", "0123456789")
+                    .add("ETTN", "0123456789").create()
+            )
+            printLine()
+            printer.printNormal(
+                POSPrinterConst.PTR_S_RECEIPT,
+                ProductText().create("cil200lyagmur", 0.22, 1.5, 1, 0)
+            )
+            printer.printNormal(
+                POSPrinterConst.PTR_S_RECEIPT,
+                ProductText().create("TELEFON", 7.25, 1.25, 3, 0)
+            )
+            printLine()
+
+            printer.printNormal(
+                POSPrinterConst.PTR_S_RECEIPT,
+                TitleValueQueue().add(
+                    "Toplam KDV",
+                    null,
+                    null,
+                    "*53,30"
+                )
+                    .add(
+                        "Toplam",
+                        null,
+                        null,
+                        "*53.30"
+                    ).bold().create()
+            )
+
+            skipLine(1)
+            printLine()
+            printer.printNormal(
+                POSPrinterConst.PTR_S_RECEIPT,
+                TitleValueQueue().add(
+
+                    "Nakit",
+                    null,
+                    null,
+                    "*53,30"
+                )
+                    .add(
+                        "Para Üstü",
+                        null,
+                        null,
+                        "*53.30"
+                    ).create()
+            )
+            skipLine(2)
+            printBarcode()
+            printBottomLogo()
+            skipLine(4)
 
             printer.cutPaper(100)
             printer.deviceEnabled = false
@@ -125,53 +187,40 @@ class MainActivity : AppCompatActivity(), IJPOSInitCompleteCallBack {
         }
     }
 
-    private fun printDateShopNumber(date: String, shopNo: Int) {
+    private fun alignLeft() {
         printer.printNormal(
-            POSPrinterConst.PTR_S_RECEIPT,
-            "\u001b\u0061\u0030Tarih \t:$date  \u001b\u0061\u0032 Mağaza No \t:$shopNo"
+            POSPrinterConst.PTR_S_RECEIPT, LEFT
+        )
+    }
+
+    private fun alignRight() {
+        printer.printNormal(
+            POSPrinterConst.PTR_S_RECEIPT, RIGHT
+        )
+    }
+
+    private fun alignCenter() {
+        printer.printNormal(
+            POSPrinterConst.PTR_S_RECEIPT, CENTER
         )
     }
 
     private fun printLine() {
-        printer.printNormal(
-            POSPrinterConst.PTR_S_RECEIPT,
-            "------------------------------------------"
-        )
-    }
-
-    private fun printTitleValue(title: String?=null, value: String?=null, rTitle:String?=null,rValue:String?=null) {
-
-        if (title!=null) {
-
+        var text = ""
+        for (i in 0 until maxLength) {
+            text += "-"
         }
-        else if(rTitle!=null){
-
-        }
-
         printer.printNormal(
             POSPrinterConst.PTR_S_RECEIPT,
-            ""
+            text
         )
     }
 
-    private fun printTimeFiscalId(time: String, fiscalId: Int) {
-        printer.printNormal(
-            POSPrinterConst.PTR_S_RECEIPT,
-            "Saat\t: $time\t\tKasa No\t\t:$fiscalId"
-        )
-    }
-
-    private fun printReceiptNoZNo(rNo: Int, zNo: Int) {
-        printer.printNormal(
-            POSPrinterConst.PTR_S_RECEIPT,
-            "Belge No: $rNo\t\tZ No\t\t:$zNo"
-        )
-    }
 
     private fun skipLine(lCount: Int) {
         var text = ""
         if (lCount > 0) {
-            for (i in 0..lCount) {
+            for (i in 0 until lCount) {
                 text += "\n"
             }
             printer.printNormal(POSPrinterConst.PTR_S_RECEIPT, text)
@@ -205,6 +254,187 @@ class MainActivity : AppCompatActivity(), IJPOSInitCompleteCallBack {
         )
     }
 
+    class TitleValueQueue() {
+        private val lTitleValue: ArrayList<Map<String?, String?>?> = arrayListOf()
+        private val rTitleValue: ArrayList<Map<String?, String?>?> = arrayListOf()
+        private val maxLength = 42
+        private var isBold = false
+        private val boldOn = "\u001b\u0021\u0008"
+        private val boldOff = "\u001b\u0021\u0000"
+
+
+        fun add(
+            title: String? = null,
+            value: String? = null,
+            rTitle: String? = null,
+            rValue: String? = null
+        ): TitleValueQueue {
+            if (title == null && value == null) lTitleValue.add(null)
+            else lTitleValue.add(
+                mapOf(
+                    "title" to title,
+                    "value" to value
+                )
+            )
+
+            if (rTitle == null && rValue == null) rTitleValue.add(null)
+            else rTitleValue.add(
+                mapOf(
+                    "title" to rTitle,
+                    "value" to rValue
+                )
+            )
+
+            return this
+        }
+
+        fun bold(): TitleValueQueue {
+            isBold = true
+            return this
+        }
+
+        private fun calculateLeftSpace(title: String): String {
+            var space = ""
+            for (i in title.length until lTitleValue.map { (it?.get("title") ?: "").length }
+                .maxOf { it }) {
+                space += " "
+            }
+            return space
+        }
+
+        private fun calculateCenterSpace(text: String, i: Int): String {
+            var space = ""
+            val length =
+                maxLength - text.length - rTitleValue.map { (it?.get("title") ?: "").length }
+                    .maxOf { it } - rTitleValue.map { (it?.get("value") ?: "").length }
+                    .maxOf { it }
+            for (i in 0 until length) {
+                space += " "
+            }
+            return space
+        }
+
+
+        private fun calculateRightSpace(title: String): String {
+            var space = ""
+            for (i in title.length until rTitleValue.map { (it?.get("title") ?: "").length }
+                .maxOf { it }) {
+                space += " "
+            }
+            return space
+        }
+
+        fun create(): String {
+            var text = ""
+            for (i in lTitleValue.indices) {
+                var tempText = ""
+                if (lTitleValue[i] != null) {
+                    tempText += lTitleValue[i]?.get("title") + lTitleValue[i]?.get("title")
+                        ?.let { it1 -> calculateLeftSpace(it1) } + ": " + (lTitleValue[i]?.get("value")
+                        ?: "")
+                }
+
+                tempText += if (rTitleValue[i] != null) {
+                    var a = calculateCenterSpace(
+                        tempText,
+                        i
+                    )
+
+                    if (rTitleValue[i]?.get("title") != null) {
+                        a = a.substring(0, a.length - 2)
+                        a += rTitleValue[i]?.get("title") + rTitleValue[i]?.get(
+                            "title"
+                        )
+                            ?.let { it1 -> calculateRightSpace(it1) } + ": "
+                    }
+                    a += (rTitleValue[i]?.get("value")) + "\n"
+                    Log.e("sss", "a :$a")
+
+                    a
+                } else "\n"
+                text += tempText
+                tempText = ""
+            }
+            Log.e("sss", "text = $text")
+
+            if (isBold) {
+                text = boldOn + text.replaceFirst(": ", ":") + boldOff
+            }
+
+            return text
+        }
+    }
+
+    class ProductText() {
+        private val maxLength = 42
+        private val discountTitle = " İNDİRİM".convertLettersToEnglish()
+        fun create(name: String, price: Double, discount: Double?, pcs: Int, type: Int): String {
+            val priceText = "*${(price * pcs).moneyFormat()}"
+
+            var text = ""
+
+            text += name.receiptLength() + calculateCenterSpace(name.receiptLength() + priceText) + priceText + "\n"
+            if (pcs > 1)
+                text += givePadding(name.receiptLength().length) + "$pcs X *${price.moneyFormat()}\n"
+            if (discount != null) {
+                val discountText = "*-" + (discount * pcs).moneyFormat()
+                text += discountTitle + calculateCenterSpace(discountTitle + discountText) + discountText + "\n"
+            }
+
+
+            return text
+        }
+
+        private fun calculateCenterSpace(text: String): String {
+            var space = ""
+            val length = maxLength - text.length
+            for (i in 0 until length) {
+                space += " "
+            }
+            return space
+        }
+
+        private fun givePadding(length: Int): String {
+            var space = ""
+            for (i in 0 until length) {
+                space += " "
+            }
+            return space
+        }
+    }
+
+    class TitleValueText() {
+        private val maxLength = 42
+
+        private fun calculateCenterSpace(text: String): String {
+            var space = ""
+            val length = maxLength - text.length
+            for (i in 0 until length) {
+                space += " "
+            }
+            return space
+        }
+
+        private fun givePadding(length: Int): String {
+            var space = ""
+            for (i in 0 until length) {
+                space += " "
+            }
+            return space
+        }
+
+        fun create(title: String?, value: String?): String {
+            var text = ""
+            if (title != null) {
+                text += PrinterText("TOPLAM KDV").bold().write()
+            }
+            if (value != null) {
+                text += calculateCenterSpace("$text*$value") + PrinterText("*$value").bold().write()
+            }
+            return text
+        }
+    }
+
     class PrinterText(private var text: String) {
         private val escape = "\u001b"
         private val turkish = "\u001btH"
@@ -217,11 +447,11 @@ class MainActivity : AppCompatActivity(), IJPOSInitCompleteCallBack {
         private val left = "\u001b\u0061\u0030"
         private val largeOn = "\u001b!\u0030"
         private val largeOff = "\u001b!0"
-        private val mediumOn = "\u001b!\u0010"
+        private val mediumOn = "\u001b!\u0030"
         private val mediumOff = "\u001b!\u0000"
-        private val compressOn = "\u001b!\u0001"
-        private val compressOff = "\u001b!\u0000"
-        private val nextLine = "\u000A"
+        private val compressOn = "\u001b\u0021\u0001"
+        private val compressOff = "\u001b\u0021\u0000"
+        private val nextLine = "\n"
 
         private var isCenter = false
         private var isLeft = false
@@ -283,32 +513,32 @@ class MainActivity : AppCompatActivity(), IJPOSInitCompleteCallBack {
         }
 
         fun write(): String {
-            when {
-                isLarge -> {
-                    text = largeOn + text + largeOff
-                }
-                isMedium -> {
-                    text = mediumOn + text + mediumOff
-                }
-                isBold -> {
-                    text = boldOn + text + boldOff
-                }
-                isCenter -> {
-                    text = center + text
-                }
-                isLeft -> {
-                    text = left + text
-                }
-                isRight -> {
-                    text = right + text
-                }
-                isUnderline -> {
-                    text = underlineOn + text + underlineOff
-                }
-                isCompress -> {
-                    text = compressOn + text + compressOff
-                }
+            if (isLarge) {
+                text = largeOn + text + largeOff
             }
+            if (isBold) {
+                text = boldOn + text + boldOff
+            }
+            if (isCompress) {
+                text = compressOn + text + compressOff
+            }
+            if (isMedium) {
+                text = mediumOn + text + mediumOff
+            }
+            if (isCenter) {
+                text = center + text
+            }
+            if (isLeft) {
+                text = left + text
+            }
+            if (isRight) {
+                text = right + text
+            }
+            if (isUnderline) {
+                text = underlineOn + text + underlineOff
+            }
+
+
             return text.convertLettersToEnglish()
         }
     }
@@ -329,8 +559,11 @@ class MainActivity : AppCompatActivity(), IJPOSInitCompleteCallBack {
 
     private fun printSubTitle(title: String, bold: Boolean) {
         val p = PrinterText(title).center().subTitle()
-        if (bold) p.bold().compress()
-        printer.printNormal(POSPrinterConst.PTR_S_RECEIPT, p.write())
+        if (bold) p.bold()
+        printer.printNormal(
+            POSPrinterConst.PTR_S_RECEIPT,
+            p.write()
+        )
     }
 
     private fun printQRCode() {
@@ -352,6 +585,7 @@ class MainActivity : AppCompatActivity(), IJPOSInitCompleteCallBack {
         )
 
     }
+
 
     private fun printBarcode() {
         val data = "3014260269401"
