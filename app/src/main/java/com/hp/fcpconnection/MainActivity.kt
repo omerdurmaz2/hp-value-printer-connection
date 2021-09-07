@@ -16,6 +16,9 @@ import android.graphics.BitmapFactory
 import android.graphics.Bitmap
 import android.util.Printer
 import jpos.POSPrinterConst.PTR_BMT_BMP
+import jpos.JposException
+
+import jpos.LineDisplayConst.DISP_DT_NORMAL
 
 
 class MainActivity : AppCompatActivity(), IJPOSInitCompleteCallBack {
@@ -47,13 +50,19 @@ class MainActivity : AppCompatActivity(), IJPOSInitCompleteCallBack {
         }
     }
 
+
+    //LINE DISPLAY
+    val linedisplay = LineDisplay()
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         JPOSApp.start(this, this)
         binding.btnYazdir.setOnClickListener {
-            connectPrinter()
+            //connectPrinter()
+            initLineDisplay()
         }
 
         printer.addStatusUpdateListener { statusUpdateEvent ->
@@ -72,6 +81,24 @@ class MainActivity : AppCompatActivity(), IJPOSInitCompleteCallBack {
                 "###errorListener: $it"
             )
         }
+
+    }
+
+    private fun initLineDisplay() {
+        try {
+            val portable = "HPLM920Display"
+            val embedded = "HPTD620Display"
+            linedisplay.open(portable)
+            linedisplay.claim(1000)
+            linedisplay.setDeviceEnabled(true)
+            linedisplay.displayText("Hello world dasda asda adasd", DISP_DT_NORMAL)
+            linedisplay.setDeviceEnabled(false)
+            linedisplay.release()
+            linedisplay.close()
+        } catch (e: JposException) {
+e.printStackTrace()
+            Log.e("sss","line error: $e")
+        }
     }
 
     override fun onComplete() {
@@ -88,7 +115,6 @@ class MainActivity : AppCompatActivity(), IJPOSInitCompleteCallBack {
             printer.claim(3000)
             printer.powerNotify = JposConst.JPOS_PN_ENABLED
             printer.deviceEnabled = true
-
 
             skipLine(2)
 
@@ -170,19 +196,19 @@ class MainActivity : AppCompatActivity(), IJPOSInitCompleteCallBack {
                     ).create()
             )
             skipLine(2)
-            printBarcode()
+            printBarcode("012345678901234567")
             printBottomLogo()
             skipLine(4)
 
             printer.cutPaper(100)
             printer.deviceEnabled = false
+            printer.release()
 
-        } catch (e: Exception) {
+        } catch (e: JposException) {
             Log.e("sss", "hata: $e, ")
             e.printStackTrace()
 
         } finally {
-            printer.release()
             printer.close()
         }
     }
@@ -372,10 +398,10 @@ class MainActivity : AppCompatActivity(), IJPOSInitCompleteCallBack {
             val priceText = "*${(price * pcs).moneyFormat()}"
 
             var text = ""
-
-            text += name.receiptLength() + calculateCenterSpace(name.receiptLength() + priceText) + priceText + "\n"
             if (pcs > 1)
-                text += givePadding(name.receiptLength().length) + "$pcs X *${price.moneyFormat()}\n"
+                text += "$pcs ${givePadding(4)}AD${givePadding(4)}*${price.moneyFormat()}\n"
+            text += name.receiptLength() + calculateCenterSpace(name.receiptLength() + priceText) + priceText + "\n"
+
             if (discount != null) {
                 val discountText = "*-" + (discount * pcs).moneyFormat()
                 text += discountTitle + calculateCenterSpace(discountTitle + discountText) + discountText + "\n"
@@ -587,17 +613,16 @@ class MainActivity : AppCompatActivity(), IJPOSInitCompleteCallBack {
     }
 
 
-    private fun printBarcode() {
-        val data = "3014260269401"
+    private fun printBarcode(barcode: String) {
         val symbology = POSPrinterConst.PTR_BCS_Code128_Parsed
         val height = 110
-        val width = 485
+        val width = 470
         val alignment = POSPrinterConst.PTR_BC_CENTER
         val textPosition = POSPrinterConst.PTR_BC_TEXT_NONE
 
         printer.printBarCode(
             POSPrinterConst.PTR_S_RECEIPT,
-            data,
+            barcode,
             symbology,
             height,
             width,
