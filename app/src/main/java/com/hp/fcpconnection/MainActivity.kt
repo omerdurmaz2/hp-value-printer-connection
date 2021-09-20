@@ -23,23 +23,22 @@ import jpos.LineDisplayConst.DISP_DT_NORMAL
 
 class MainActivity : AppCompatActivity(), IJPOSInitCompleteCallBack {
 
-    private val escape = "\u001b"
-    private val excMark = "\u0021"
-
-    val BOLD_ON = "\u001b\u0045\u0001"
-    val BOLD_OFF = "\u001b\u0045"
-    val UNDERLINE_ON = "\u001b\u002d\u0031"
-    val UNDERLINE_OFF = "\u001b\u002d\u0030"
-    var RIGHT = "\u001b\u0061\u0032"
-    var CENTER = "\u001b\u0061\u0031"
-    var LEFT = "\u001b\u0061\u0030"
-    var LARGE_ON = "\u001b\u0021\u0010"
-    var LARGE_OFF = "\u001b\u0021\u0030"
-    var MEDIUM_ON = "\u001b\u0021\u0008"
-    var MEDIUM_OFF = "\u001b\u0021\u0010"
-    private val compressOn = "\u001b\u0021\u0001"
-    private val emphasizedOn = "\u001b\u0045\u0001"
-    private val emphasizedOff = "\u001b\u0045\u0000"
+    private val ESC = "\u001B"
+    val normal = "${ESC}! "
+    val BOLD_ON = "${ESC}E\u0001"
+    val BOLD_OFF = "${ESC}E"
+    val UNDERLINE_ON = "${ESC}-1"
+    val UNDERLINE_OFF = " ${ESC}-0"
+    var RIGHT = "${ESC}a2"
+    var CENTER = "${ESC}a1"
+    var LEFT = "${ESC}a0"
+    var LARGE_ON = "${ESC}!\u0010"
+    var LARGE_OFF = "${ESC}!0"
+    var MEDIUM_ON = "${ESC}!\b"
+    var MEDIUM_OFF = "${ESC}!\u0010"
+    private val compressOn = "${ESC}!\u0001"
+    private val emphasizedOn = "${ESC}!\b"
+    private val emphasizedOff = "${ESC}E "
     private val maxLength = 42
 
     private lateinit var binding: ActivityMainBinding
@@ -52,7 +51,7 @@ class MainActivity : AppCompatActivity(), IJPOSInitCompleteCallBack {
 
 
     //LINE DISPLAY
-    val linedisplay = LineDisplay()
+    private val lineDisplay = LineDisplay()
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -61,8 +60,8 @@ class MainActivity : AppCompatActivity(), IJPOSInitCompleteCallBack {
         setContentView(binding.root)
         JPOSApp.start(this, this)
         binding.btnYazdir.setOnClickListener {
-            //connectPrinter()
-            initLineDisplay()
+            connectPrinter()
+            //initLineDisplay()
         }
 
         printer.addStatusUpdateListener { statusUpdateEvent ->
@@ -88,16 +87,16 @@ class MainActivity : AppCompatActivity(), IJPOSInitCompleteCallBack {
         try {
             val portable = "HPLM920Display"
             val embedded = "HPTD620Display"
-            linedisplay.open(portable)
-            linedisplay.claim(1000)
-            linedisplay.setDeviceEnabled(true)
-            linedisplay.displayText("Hello world dasda asda adasd", DISP_DT_NORMAL)
-            linedisplay.setDeviceEnabled(false)
-            linedisplay.release()
-            linedisplay.close()
+            lineDisplay.open(portable)
+            lineDisplay.claim(1000)
+            lineDisplay.deviceEnabled = true
+            lineDisplay.displayText("Hello world dasda asda adasd", DISP_DT_NORMAL)
+            lineDisplay.deviceEnabled = false
+            lineDisplay.release()
+            lineDisplay.close()
         } catch (e: JposException) {
-e.printStackTrace()
-            Log.e("sss","line error: $e")
+            e.printStackTrace()
+            Log.e("sss", "line error: $e")
         }
     }
 
@@ -119,97 +118,121 @@ e.printStackTrace()
             skipLine(2)
 
             printTopLogo()
-            printAddress()
-            skipLine(1)
-            printTitle("BİLGİ FİŞİ", true)
-            skipLine(2)
-            printSubTitle("TÜR: e-ARŞİV FATURA", true)
-            skipLine(2)
-            alignLeft()
-            printer.printNormal(
-                POSPrinterConst.PTR_S_RECEIPT,
-                TitleValueQueue().add("Tarih", "22.06.1998", "Magaza No", "120")
-                    .add("Saat", "09:53", "Kasa No", "1")
-                    .add("Belge No", "4", "Z No", "26")
-                    .create()
-            )
-            printLine()
-            alignCenter()
-            printSubTitle("E-Arşiv Gönderim Bilgileri", true)
-            skipLine(1)
-            alignLeft()
-            printer.printNormal(
-                POSPrinterConst.PTR_S_RECEIPT,
-                TitleValueQueue()
-                    .add("EPosta", "")
-                    .add("Ünvan", "Nihai Tüketici")
-                    .add("V.D", "")
-                    .add("V.K.N", "11111111111")
-                    .add("Telefon", "")
-                    .add("Adres", "")
-                    .add("Belge No", "0123456789")
-                    .add("ETTN", "0123456789").create()
-            )
-            printLine()
-            printer.printNormal(
-                POSPrinterConst.PTR_S_RECEIPT,
-                ProductText().create("cil200lyagmur", 0.22, 1.5, 1, 0)
-            )
-            printer.printNormal(
-                POSPrinterConst.PTR_S_RECEIPT,
-                ProductText().create("TELEFON", 7.25, 1.25, 3, 0)
-            )
-            printLine()
+            //printAddress()
+            // skipLine(1)
 
-            printer.printNormal(
-                POSPrinterConst.PTR_S_RECEIPT,
-                TitleValueQueue().add(
-                    "Toplam KDV",
-                    null,
-                    null,
-                    "*53,30"
-                )
-                    .add(
-                        "Toplam",
-                        null,
-                        null,
-                        "*53.30"
-                    ).bold().create()
+            printer.queueText(CENTER)
+
+            printer.queueText(
+                "bilgi fisi"
             )
+            printer.queueFeedLine(1)
 
-            skipLine(1)
-            printLine()
-            printer.printNormal(
-                POSPrinterConst.PTR_S_RECEIPT,
-                TitleValueQueue().add(
-
-                    "Nakit",
-                    null,
-                    null,
-                    "*53,30"
-                )
-                    .add(
-                        "Para Üstü",
-                        null,
-                        null,
-                        "*53.30"
-                    ).create()
+            printer.queueText(
+                LARGE_ON + BOLD_ON + "BILGI FISI" + LARGE_OFF
             )
-            skipLine(2)
-            printBarcode("012345678901234567")
-            printBottomLogo()
-            skipLine(4)
+            printer.queueFeedLine(1)
 
-            printer.cutPaper(100)
+            printer.queueText(
+                MEDIUM_ON + "BILGI FISI" + MEDIUM_OFF
+            )
+            printer.queueFeedLine(2)
+            printer.queueText(
+                compressOn+ "bilgi fisi"
+            )
+            printer.queueFeedLine(1)
+
+            /*  printTitle("BİLGİ FİŞİ", true)
+              skipLine(2)
+              printSubTitle("TÜR: e-ARŞİV FATURA", true)
+              skipLine(2)
+              alignLeft()
+              printer.printNormal(
+                  POSPrinterConst.PTR_S_RECEIPT,
+                  TitleValueQueue().add("Tarih", "22.06.1998", "Magaza No", "120")
+                      .add("Saat", "09:53", "Kasa No", "1")
+                      .add("Belge No", "4", "Z No", "26")
+                      .create()
+              )
+              printLine()
+              alignCenter()
+              printSubTitle("E-Arşiv Gönderim Bilgileri", true)
+              skipLine(1)
+              alignLeft()
+              printer.printNormal(
+                  POSPrinterConst.PTR_S_RECEIPT,
+                  TitleValueQueue()
+                      .add("EPosta", "")
+                      .add("Ünvan", "Nihai Tüketici")
+                      .add("V.D", "")
+                      .add("V.K.N", "11111111111")
+                      .add("Telefon", "")
+                      .add("Adres", "")
+                      .add("Belge No", "0123456789")
+                      .add("ETTN", "0123456789").create()
+              )
+              printLine()
+              printer.printNormal(
+                  POSPrinterConst.PTR_S_RECEIPT,
+                  ProductText().create("cil200lyagmur", 0.22, 1.5, 1, 0)
+              )
+              printer.printNormal(
+                  POSPrinterConst.PTR_S_RECEIPT,
+                  ProductText().create("TELEFON", 7.25, 1.25, 3, 0)
+              )
+              printLine()
+
+              printer.printNormal(
+                  POSPrinterConst.PTR_S_RECEIPT,
+                  TitleValueQueue().add(
+                      "Toplam KDV",
+                      null,
+                      null,
+                      "*53,30"
+                  )
+                      .add(
+                          "Toplam",
+                          null,
+                          null,
+                          "*53.30"
+                      ).bold().create()
+              )
+
+              skipLine(1)
+              printLine()
+              printer.printNormal(
+                  POSPrinterConst.PTR_S_RECEIPT,
+                  TitleValueQueue().add(
+
+                      "Nakit",
+                      null,
+                      null,
+                      "*53,30"
+                  )
+                      .add(
+                          "Para Üstü",
+                          null,
+                          null,
+                          "*53.30"
+                      ).create()
+              )
+              skipLine(2)
+              printBarcode("012345678901234567")
+              printBottomLogo()
+              skipLine(4)
+
+              printer.cutPaper(100)*/
+            printer.queuePaperCut(2, 50)
+            printer.printQueuedDataNormal(POSPrinterConst.PTR_S_RECEIPT)
             printer.deviceEnabled = false
             printer.release()
+            printer.close()
 
         } catch (e: JposException) {
             Log.e("sss", "hata: $e, ")
             e.printStackTrace()
 
         } finally {
-            printer.close()
         }
     }
 
